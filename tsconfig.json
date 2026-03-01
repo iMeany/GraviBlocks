@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "paths": {
+      "@model/*": ["./src/game/model/*"],
+      "@view/*": ["./src/game/view/*"],
+      "@scenes/*": ["./src/game/scenes/*"],
+      "@input/*": ["./src/game/input/*"],
+      "@config/*": ["./src/game/config/*"],
+      "@events/*": ["./src/game/events/*"]
+    },
+    "baseUrl": "."
+  },
+  "include": ["src/**/*.ts"]
+}

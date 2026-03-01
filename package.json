@@ -1,0 +1,22 @@
+{
+  "name": "gravi-blocks",
+  "version": "0.1.0",
+  "description": "Grid-based puzzle game — blocks fall from 4 sides toward a center piece",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["phaser", "puzzle", "game"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}
