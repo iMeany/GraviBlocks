@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // JuiceManager — centralizes all visual effects (tweens, shake, particles).
-// Subscribes to model events via EventBus. Keeps GameScene clean.
+// Exposes methods called by GameScene at the right time in the pipeline.
 // ---------------------------------------------------------------------------
 
 import type Phaser from 'phaser';
@@ -11,13 +11,10 @@ import {
     PARTICLE_SPEED_MIN,
     SHAKE_DURATION,
     SHAKE_INTENSITY,
-    SHAKE_INTENSITY_BIG,
     TWEEN_SETTLE_MS,
     TWEEN_SQUASH_MS,
     TWEEN_STRETCH_MS,
 } from '../config/Constants';
-import { eventBus } from '../events/EventBus';
-import { GameEvents } from '../events/GameEvents';
 import type { BoardView } from './BoardView';
 
 export class JuiceManager {
@@ -28,9 +25,7 @@ export class JuiceManager {
     constructor(scene: Phaser.Scene, boardView: BoardView) {
         this.scene = scene;
         this.boardView = boardView;
-
         this.createParticleTexture();
-        this.bindEvents();
     }
 
     // -----------------------------------------------------------------------
@@ -52,60 +47,70 @@ export class JuiceManager {
         this.particleTexture = key;
     }
 
-    private bindEvents(): void {
-        eventBus.on(GameEvents.PIECE_LANDED, this.onPieceLanded);
-        eventBus.on(GameEvents.GAME_WON, this.onGameWon);
-    }
-
     // -----------------------------------------------------------------------
-    // Effects
+    // Public effects — called by GameScene
     // -----------------------------------------------------------------------
 
-    private onPieceLanded = (data: { cells: { col: number; row: number }[]; color: string }) => {
-        // Squash / stretch each landed cell
+    /** Squash/stretch + shake + particles for each landed cell. */
+    playLandEffect(data: { cells: { col: number; row: number }[]; color: string }): void {
         for (let i = 0; i < data.cells.length; i++) {
             const { col, row } = data.cells[i];
             const rect = this.boardView.getCellRect(col, row);
             if (!rect) continue;
 
-            this.scene.tweens.chain({
-                targets: rect,
-                tweens: [
-                    { scaleX: 1.3, scaleY: 0.7, duration: TWEEN_SQUASH_MS, ease: 'Quad.Out' },
-                    { scaleX: 0.9, scaleY: 1.15, duration: TWEEN_STRETCH_MS, ease: 'Quad.Out' },
-                    { scaleX: 1, scaleY: 1, duration: TWEEN_SETTLE_MS, ease: 'Bounce.Out' },
-                ],
-                delay: i * 30, // stagger
+            // Use delayedCall for reliable stagger (chain's top-level delay is unreliable)
+            const stagger = i * 40;
+            this.scene.time.delayedCall(stagger, () => {
+                this.scene.tweens.add({
+                    targets: rect,
+                    scaleX: 1.3,
+                    scaleY: 0.7,
+                    duration: TWEEN_SQUASH_MS,
+                    ease: 'Quad.Out',
+                    onComplete: () => {
+                        this.scene.tweens.add({
+                            targets: rect,
+                            scaleX: 0.9,
+                            scaleY: 1.15,
+                            duration: TWEEN_STRETCH_MS,
+                            ease: 'Quad.Out',
+                            onComplete: () => {
+                                this.scene.tweens.add({
+                                    targets: rect,
+                                    scaleX: 1,
+                                    scaleY: 1,
+                                    duration: TWEEN_SETTLE_MS,
+                                    ease: 'Bounce.Out',
+                                });
+                            },
+                        });
+                    },
+                });
             });
         }
 
         // Screen shake
         this.scene.cameras.main.shake(SHAKE_DURATION, SHAKE_INTENSITY);
 
-        // Particle burst at the center of the landed cells
+        // Particle burst
         this.emitParticles(data.cells, data.color);
-    };
+    }
 
-    private onGameWon = () => {
-        // Big shake
-        this.scene.cameras.main.shake(200, SHAKE_INTENSITY_BIG);
-
-        // Flash
-        this.scene.cameras.main.flash(400, 255, 255, 255);
-
-        // Camera zoom pulse
+    /** Celebration effect for level completion. */
+    playWinEffect(): void {
+        // Gentle zoom pulse — no flash, no big shake
         this.scene.cameras.main.zoomTo(
-            1.3,
-            300,
+            1.15,
+            250,
             'Sine.InOut',
             false,
             (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
                 if (progress === 1) {
-                    this.scene.cameras.main.zoomTo(1, 200, 'Sine.InOut');
+                    this.scene.cameras.main.zoomTo(1, 300, 'Sine.InOut');
                 }
             },
         );
-    };
+    }
 
     // -----------------------------------------------------------------------
     // Helpers
@@ -130,7 +135,7 @@ export class JuiceManager {
         const worldX = container.x + cx;
         const worldY = container.y + cy;
 
-        const tint = parseInt(color.replace('#', ''), 16);
+        const tint = Number.parseInt(color.replace('#', ''), 16);
 
         const emitter = this.scene.add.particles(worldX, worldY, this.particleTexture, {
             speed: { min: PARTICLE_SPEED_MIN, max: PARTICLE_SPEED_MAX },
@@ -163,7 +168,6 @@ export class JuiceManager {
     }
 
     destroy(): void {
-        eventBus.off(GameEvents.PIECE_LANDED, this.onPieceLanded);
-        eventBus.off(GameEvents.GAME_WON, this.onGameWon);
+        // No event listeners to remove — all calls are explicit now
     }
 }

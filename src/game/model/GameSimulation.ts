@@ -64,7 +64,7 @@ export class GameSimulation {
 
         const piece = PieceSpawner.randomPiece();
         const side = this.spawner.nextSide();
-        const pos = PieceSpawner.spawnPosition(side, this.board.width, this.board.height);
+        const pos = PieceSpawner.spawnPosition(side, this.board.width, this.board.height, piece);
 
         // Check if spawn position is already blocked
         const cells = piece.getAbsoluteCells(pos.col, pos.row);

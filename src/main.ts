@@ -12,8 +12,8 @@ import { UIScene } from './game/scenes/UIScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: 1280,
+    height: 960,
     parent: 'game-container',
     backgroundColor: COLOR_BACKGROUND,
     scale: {

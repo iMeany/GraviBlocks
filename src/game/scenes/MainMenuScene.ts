@@ -59,6 +59,14 @@ export class MainMenuScene extends Phaser.Scene {
             this.scene.start('GameScene', { levelIndex: 0 });
         });
 
+        // Space key also starts the game
+        if (this.input.keyboard) {
+            const spaceKey = this.input.keyboard.addKey('SPACE');
+            spaceKey.once('down', () => {
+                this.scene.start('GameScene', { levelIndex: 0 });
+            });
+        }
+
         // Controls help
         this.add
             .text(

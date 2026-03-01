@@ -43,6 +43,25 @@ Phaser supports running multiple scenes simultaneously. `UIScene` renders the HU
 
 The model emits events (`piece-landed`, `game-won`). Views subscribe and react. Adding a new visual effect means subscribing to an event — zero changes to game logic. This is the primary extensibility mechanism.
 
+## Controls
+
+| Key | Action |
+| --- | --- |
+| Arrow keys | Move piece (absolute screen direction, perpendicular to fall) |
+| Z | Rotate counter-clockwise |
+| X | Rotate clockwise |
+| Space | Hard drop |
+| P | Pause / unpause |
+| R | Restart current level |
+| ` (backtick) | Toggle debug HUD |
+
+Swipe and tap are supported for touch input.
+
+## Debug Tools
+
+- **Browser console**: All game events are logged with `[GRAVI]` prefix — filter with that tag. Type `__gravi.dumpState()` in the console for a full state snapshot.
+- **On-screen HUD**: Press backtick (`` ` ``) to toggle a live overlay showing phase, score, target progress, spawn side, and a rolling event log.
+
 ## Project Structure
 
 ```text
@@ -61,8 +80,9 @@ src/
     scenes/
       BootScene.ts            # Minimal — starts preloader
       PreloadScene.ts         # Asset loading
-      GameScene.ts            # Owns simulation + views
-      UIScene.ts              # HUD overlay (score, next piece)
+      MainMenuScene.ts        # Title screen
+      GameScene.ts            # Owns simulation + views + debug
+      UIScene.ts              # HUD overlay (score, level name)
     input/
       InputManager.ts         # Keyboard + touch → game actions
     config/
@@ -71,6 +91,9 @@ src/
     events/
       EventBus.ts             # Shared event emitter
       GameEvents.ts           # Event name constants
+    debug/
+      DebugLogger.ts          # Console logging with [GRAVI] prefix
+      DebugHUD.ts             # On-screen live state overlay
 ```
 
 ## Conventions

@@ -64,20 +64,43 @@ export class PieceSpawner {
 
     /**
      * Starting grid position for a piece spawning on the given side.
-     * The piece is centered on the perpendicular axis.
+     * The piece is centered on the perpendicular axis, and pushed inward
+     * just enough so that ALL cells of the piece are within the board bounds.
      */
-    static spawnPosition(side: Direction, boardWidth: number, boardHeight: number): { col: number; row: number } {
+    static spawnPosition(
+        side: Direction,
+        boardWidth: number,
+        boardHeight: number,
+        piece: PieceModel,
+    ): { col: number; row: number } {
         const midCol = Math.floor(boardWidth / 2);
         const midRow = Math.floor(boardHeight / 2);
+
+        // Compute the piece's bounding box from its offsets
+        let minDx = 0;
+        let maxDx = 0;
+        let minDy = 0;
+        let maxDy = 0;
+        for (const o of piece.offsets) {
+            if (o.dx < minDx) minDx = o.dx;
+            if (o.dx > maxDx) maxDx = o.dx;
+            if (o.dy < minDy) minDy = o.dy;
+            if (o.dy > maxDy) maxDy = o.dy;
+        }
+
         switch (side) {
             case 'top':
-                return { col: midCol, row: 0 };
+                // Pivot row must be ≥ -minDy so that (row + minDy) ≥ 0
+                return { col: midCol, row: -minDy };
             case 'bottom':
-                return { col: midCol, row: boardHeight - 1 };
+                // Pivot row must be ≤ (height-1) - maxDy so that (row + maxDy) < height
+                return { col: midCol, row: boardHeight - 1 - maxDy };
             case 'left':
-                return { col: 0, row: midRow };
+                // Pivot col must be ≥ -minDx
+                return { col: -minDx, row: midRow };
             case 'right':
-                return { col: boardWidth - 1, row: midRow };
+                // Pivot col must be ≤ (width-1) - maxDx
+                return { col: boardWidth - 1 - maxDx, row: midRow };
         }
     }
 

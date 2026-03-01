@@ -36,16 +36,28 @@ function rect(startCol: number, startRow: number, w: number, h: number): { col: 
     return cells;
 }
 
+/** Helper: generate a small + (plus) shape centered at (cx, cy) */
+function plus(cx: number, cy: number): { col: number; row: number }[] {
+    return [
+        { col: cx, row: cy }, // center
+        { col: cx - 1, row: cy }, // left
+        { col: cx + 1, row: cy }, // right
+        { col: cx, row: cy - 1 }, // top
+        { col: cx, row: cy + 1 }, // bottom
+    ];
+}
+
 /**
- * Level 1: 9×9 board, single center cell, 3×3 target square around center.
+ * Level 1: 15×15 board, + shaped center, 5×5 target zone, CW spawn.
+ * Large board gives the player time to think as blocks travel toward center.
  */
 const level1: LevelConfig = {
-    name: 'Level 1 — Tiny Square',
-    boardWidth: 9,
-    boardHeight: 9,
-    centerCells: [{ col: 4, row: 4 }],
-    targetCells: rect(3, 3, 3, 3),
-    spawnMode: 'random',
+    name: 'Level 1 — First Steps',
+    boardWidth: 15,
+    boardHeight: 15,
+    centerCells: plus(7, 7),
+    targetCells: rect(5, 5, 5, 5),
+    spawnMode: 'cw',
     fallInterval: 600,
 };
 

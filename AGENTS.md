@@ -12,7 +12,7 @@ A web-based grid-logic 2D puzzle game. Tetromino-like pieces spawn from **4 side
 
 **Why decouple?** The game has two very different update rates. Grid logic is discrete (step-based, on a timer); visuals are continuous (60 fps tweens, particles). Keeping the model as pure TypeScript also makes it unit-testable without Phaser.
 
-```
+```text
 Input → GameScene → GameSimulation (model) → emits events → Views react
 ```
 
@@ -20,6 +20,7 @@ Input → GameScene → GameSimulation (model) → emits events → Views react
 - **View layer** (`src/game/view/`): Reads model state, creates/updates Phaser GameObjects. Subscribes to model events for animations.
 - **Scenes** (`src/game/scenes/`): Phaser scenes wire model + view together. GameScene owns the simulation; UIScene runs in parallel for HUD.
 - **Input** (`src/game/input/`): Abstracts keyboard + touch into game actions so the simulation never knows about raw keys.
+- **Debug** (`src/game/debug/`): DebugLogger dumps all events to browser console with `[GRAVI]` prefix. DebugHUD shows live state overlay (toggle with backtick key). Both are wired in GameScene and destroyed on cleanup.
 
 ---
 
@@ -30,7 +31,7 @@ Input → GameScene → GameSimulation (model) → emits events → Views react
 - Folder structure matching the architecture above
 - No React, no telemetry, no unnecessary deps
 
-## Stage 1 — Grid Model (Pure Logic)
+## Stage 1 — Grid Model (Pure Logic) ✅
 
 Build the entire game simulation with zero rendering. Everything should be testable by logging board state to console.
 
@@ -44,25 +45,27 @@ Build the entire game simulation with zero rendering. Everything should be testa
 
 **Key design choice — custom grid over Phaser Tilemap:** Tilemap is optimized for Tiled-editor map loading. Our game has unique 4-directional gravity and a center piece, which don't map to Tilemap assumptions. A plain `Cell[][]` is simpler and fully controlled.
 
-## Stage 2 — Basic Rendering
+## Stage 2 — Basic Rendering ✅
 
 Programmer-art (colored rectangles). BoardView and PieceView read model state and render Phaser Rectangles. Camera auto-scales to fit the board. Grid-line debug overlay toggleable.
 
-## Stage 3 — Input & Controls
+## Stage 3 — Input & Controls ✅
 
 InputManager abstracts keyboard/touch into `MOVE_LEFT`, `MOVE_RIGHT`, `ROTATE_CW`, `ROTATE_CCW`, `HARD_DROP`. Uses `checkDown()` for rate-limited repeats. MVP uses absolute arrow keys (not remapped per fall direction).
 
 **Why absolute keys first?** Remapping left/right based on fall direction is disorienting without visual cues. Start simple, add as an option in settings later.
 
-## Stage 4 — Juice & Feel
+## Stage 4 — Juice & Feel ✅
 
-Squash/stretch tweens on landing, screen shake, particle bursts, smooth grid-movement tweens. All centralized in `JuiceManager` that subscribes to model events.
+Squash/stretch tweens on landing, screen shake, particle bursts, smooth grid-movement tweens. JuiceManager exposes methods called by GameScene at the right time in the pipeline (not auto-subscribing to events).
 
-**Why a JuiceManager?** Keeps GameScene clean. Adding a new effect = subscribe to an event, fire a tween. No game logic touched.
+**Why explicit calls instead of auto-subscribing?** The order matters: board must sync colors before tweens target the cells. GameScene orchestrates: sync → juice → reset timer.
 
-## Stage 5 — Game Loop & Polish
+## Stage 5 — Game Loop & Polish (In Progress)
 
 Speed progression, piece preview queue, game over / win states, main menu scene, pause, scoring, sound placeholders.
+
+**Implemented:** Win/game-over overlays with camera reset, double-cleanup guard, any-key-to-continue. Level transitions working (3 levels). Debug tools (DebugLogger + DebugHUD). Restart with R key.
 
 ## Stage 6 — Future (Post-MVP)
 

@@ -14,7 +14,8 @@ export type GameAction =
     | 'rotate-cw'
     | 'rotate-ccw'
     | 'hard-drop'
-    | 'pause';
+    | 'pause'
+    | 'restart';
 
 export class InputManager {
     private scene: Phaser.Scene;
@@ -23,6 +24,7 @@ export class InputManager {
     private keyX!: Phaser.Input.Keyboard.Key;
     private keySpace!: Phaser.Input.Keyboard.Key;
     private keyP!: Phaser.Input.Keyboard.Key;
+    private keyR!: Phaser.Input.Keyboard.Key;
 
     /** Callbacks registered by the scene */
     private actionListeners: ((action: GameAction) => void)[] = [];
@@ -36,6 +38,7 @@ export class InputManager {
             this.keyX = scene.input.keyboard.addKey('X');
             this.keySpace = scene.input.keyboard.addKey('SPACE');
             this.keyP = scene.input.keyboard.addKey('P');
+            this.keyR = scene.input.keyboard.addKey('R');
 
             // Prevent browser defaults for game keys
             scene.input.keyboard.addCapture(['UP', 'DOWN', 'LEFT', 'RIGHT', 'SPACE']);
@@ -83,6 +86,9 @@ export class InputManager {
         }
         if (Phaser.Input.Keyboard.JustDown(this.keyP)) {
             this.emit('pause');
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
+            this.emit('restart');
         }
     }
 
