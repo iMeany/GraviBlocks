@@ -14,6 +14,8 @@ export const COLOR_CELL_EMPTY = 0x16213e;
 export const COLOR_CELL_CENTER = 0x444466;
 export const COLOR_CELL_TARGET = 0x334455;
 export const COLOR_CELL_GHOST = 0xffffff;
+export const COLOR_CELL_GHOST_SPILL = 0xffcc99; // barely-orange tint: outside target zone
+export const COLOR_CELL_GHOST_WALL  = 0xff2222; // red: piece would reach opposite wall
 
 export const PIECE_COLORS: number[] = [
     0xe94560, // red

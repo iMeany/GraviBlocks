@@ -322,7 +322,7 @@ export class GameScene extends Phaser.Scene {
         if (!this.sim.currentPiece) return;
         const ghost = this.sim.getGhostPosition();
         if (ghost) {
-            this.pieceView.showGhost(this.sim.currentPiece, ghost.col, ghost.row);
+            this.pieceView.showGhost(this.sim.currentPiece, ghost.col, ghost.row, ghost.danger);
         }
     }
 

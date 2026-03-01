@@ -156,10 +156,10 @@ export class BoardModel {
         }
         if (maxTargetCol === -1) return;
 
-        // Clear the target cells themselves
+        // Clear the target cells themselves (never touch the immovable center cells)
         for (let col = minTargetCol; col <= maxTargetCol; col++) {
             const cell = this.grid[row][col];
-            if (cell.isTarget) { cell.occupied = false; cell.color = null; }
+            if (cell.isTarget && !cell.isCenter) { cell.occupied = false; cell.color = null; }
         }
 
         // Extend left while consecutively occupied
@@ -192,7 +192,7 @@ export class BoardModel {
 
         for (let row = minTargetRow; row <= maxTargetRow; row++) {
             const cell = this.grid[row][col];
-            if (cell.isTarget) { cell.occupied = false; cell.color = null; }
+            if (cell.isTarget && !cell.isCenter) { cell.occupied = false; cell.color = null; }
         }
 
         // Extend upward while consecutively occupied
@@ -241,15 +241,15 @@ export class BoardModel {
             const top: (string | null)[] = [];
             for (let r = minTargetRow; r < centerRow; r++) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget && cell.occupied) top.push(cell.color);
+                if (cell.isTarget && !cell.isCenter && cell.occupied) top.push(cell.color);
             }
             for (let r = minTargetRow; r < centerRow; r++) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget) { cell.occupied = false; cell.color = null; }
+                if (cell.isTarget && !cell.isCenter) { cell.occupied = false; cell.color = null; }
             }
             let fill = centerRow - 1;
             for (let i = top.length - 1; i >= 0; i--) {
-                while (fill >= minTargetRow && !this.grid[fill][c].isTarget) fill--;
+                while (fill >= minTargetRow && (!this.grid[fill][c].isTarget || this.grid[fill][c].isCenter)) fill--;
                 if (fill < minTargetRow) break;
                 this.grid[fill][c].occupied = true; this.grid[fill][c].color = top[i]; fill--;
             }
@@ -258,15 +258,15 @@ export class BoardModel {
             const bot: (string | null)[] = [];
             for (let r = maxTargetRow; r > centerRow; r--) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget && cell.occupied) bot.push(cell.color);
+                if (cell.isTarget && !cell.isCenter && cell.occupied) bot.push(cell.color);
             }
             for (let r = centerRow + 1; r <= maxTargetRow; r++) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget) { cell.occupied = false; cell.color = null; }
+                if (cell.isTarget && !cell.isCenter) { cell.occupied = false; cell.color = null; }
             }
             fill = centerRow + 1;
             for (let i = bot.length - 1; i >= 0; i--) {
-                while (fill <= maxTargetRow && !this.grid[fill][c].isTarget) fill++;
+                while (fill <= maxTargetRow && (!this.grid[fill][c].isTarget || this.grid[fill][c].isCenter)) fill++;
                 if (fill > maxTargetRow) break;
                 this.grid[fill][c].occupied = true; this.grid[fill][c].color = bot[i]; fill++;
             }
@@ -279,15 +279,15 @@ export class BoardModel {
             const lft: (string | null)[] = [];
             for (let c = minTargetCol; c < centerCol; c++) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget && cell.occupied) lft.push(cell.color);
+                if (cell.isTarget && !cell.isCenter && cell.occupied) lft.push(cell.color);
             }
             for (let c = minTargetCol; c < centerCol; c++) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget) { cell.occupied = false; cell.color = null; }
+                if (cell.isTarget && !cell.isCenter) { cell.occupied = false; cell.color = null; }
             }
             let fill = centerCol - 1;
             for (let i = lft.length - 1; i >= 0; i--) {
-                while (fill >= minTargetCol && !this.grid[r][fill].isTarget) fill--;
+                while (fill >= minTargetCol && (!this.grid[r][fill].isTarget || this.grid[r][fill].isCenter)) fill--;
                 if (fill < minTargetCol) break;
                 this.grid[r][fill].occupied = true; this.grid[r][fill].color = lft[i]; fill--;
             }
@@ -296,15 +296,15 @@ export class BoardModel {
             const rgt: (string | null)[] = [];
             for (let c = maxTargetCol; c > centerCol; c--) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget && cell.occupied) rgt.push(cell.color);
+                if (cell.isTarget && !cell.isCenter && cell.occupied) rgt.push(cell.color);
             }
             for (let c = centerCol + 1; c <= maxTargetCol; c++) {
                 const cell = this.grid[r][c];
-                if (cell.isTarget) { cell.occupied = false; cell.color = null; }
+                if (cell.isTarget && !cell.isCenter) { cell.occupied = false; cell.color = null; }
             }
             fill = centerCol + 1;
             for (let i = rgt.length - 1; i >= 0; i--) {
-                while (fill <= maxTargetCol && !this.grid[r][fill].isTarget) fill++;
+                while (fill <= maxTargetCol && (!this.grid[r][fill].isTarget || this.grid[r][fill].isCenter)) fill++;
                 if (fill > maxTargetCol) break;
                 this.grid[r][fill].occupied = true; this.grid[r][fill].color = rgt[i]; fill++;
             }

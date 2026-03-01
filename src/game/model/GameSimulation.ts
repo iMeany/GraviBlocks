@@ -260,7 +260,7 @@ export class GameSimulation {
      * Compute where the piece would end up if hard-dropped from current position.
      * Used to render the ghost piece.
      */
-    getGhostPosition(): { col: number; row: number } | null {
+    getGhostPosition(): { col: number; row: number; danger: 'none' | 'spill' | 'wall' } | null {
         if (!this.currentPiece) return null;
         let ghostCol = this.pieceCol;
         let ghostRow = this.pieceRow;
@@ -269,7 +269,21 @@ export class GameSimulation {
             ghostCol += this.fallDir.dx;
             ghostRow += this.fallDir.dy;
         }
-        return { col: ghostCol, row: ghostRow };
+
+        // Check why movement stopped: if the next step would leave the board → opposite wall hit
+        const nextCol = ghostCol + this.fallDir.dx;
+        const nextRow = ghostRow + this.fallDir.dy;
+        const hitWall = this.currentPiece.offsets.some(({ dx, dy }) =>
+            !this.board.isInBounds(nextCol + dx, nextRow + dy)
+        );
+        if (hitWall) return { col: ghostCol, row: ghostRow, danger: 'wall' };
+
+        // Otherwise check if any cell lands outside the target zone
+        const willSpill = this.currentPiece.offsets.some(({ dx, dy }) => {
+            const cell = this.board.getCell(ghostCol + dx, ghostRow + dy);
+            return !cell || !cell.isTarget;
+        });
+        return { col: ghostCol, row: ghostRow, danger: willSpill ? 'spill' : 'none' };
     }
 
     // -----------------------------------------------------------------------

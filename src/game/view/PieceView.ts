@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import type Phaser from 'phaser';
-import { COLOR_CELL_GHOST, TWEEN_MOVE_MS } from '../config/Constants';
+import { COLOR_CELL_GHOST, COLOR_CELL_GHOST_SPILL, COLOR_CELL_GHOST_WALL, TWEEN_MOVE_MS } from '../config/Constants';
 import type { PieceModel } from '../model/PieceModel';
 import type { BoardView } from './BoardView';
 
@@ -71,10 +71,16 @@ export class PieceView {
 
     /**
      * Show ghost piece at the hard-drop destination.
+     * danger: 'wall'  → red   (piece would reach the opposite wall)
+     *         'spill' → light orange (lands outside the target zone)
+     *         'none'  → normal ghost
      */
-    showGhost(piece: PieceModel, col: number, row: number): void {
+    showGhost(piece: PieceModel, col: number, row: number, danger: 'none' | 'spill' | 'wall' = 'none'): void {
         this.clearGhost();
         const cellSize = this.boardView.getCellSize();
+        const ghostColor = danger === 'wall'  ? COLOR_CELL_GHOST_WALL
+                         : danger === 'spill' ? COLOR_CELL_GHOST_SPILL
+                         : COLOR_CELL_GHOST;
 
         for (const offset of piece.offsets) {
             const pos = this.boardView.gridToPixel(col + offset.dx, row + offset.dy);
@@ -83,10 +89,10 @@ export class PieceView {
                 pos.y,
                 cellSize - 2,
                 cellSize - 2,
-                COLOR_CELL_GHOST,
+                ghostColor,
                 0.18, // slight fill for visibility
             );
-            rect.setStrokeStyle(2, COLOR_CELL_GHOST, 0.75);
+            rect.setStrokeStyle(2, ghostColor, 0.75);
             rect.setAlpha(0.55);
             this.container.add(rect);
             this.ghostBlocks.push(rect);

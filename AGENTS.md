@@ -70,6 +70,7 @@ Squash/stretch tweens on landing, screen shake, particle bursts, smooth grid-mov
 Speed progression, piece preview queue, game over / win states, main menu scene, pause, scoring, sound placeholders.
 
 **Implemented:**
+
 - Win/game-over overlays with camera reset, double-cleanup guard, any-key-to-continue.
 - Level transitions working (3 Normal levels).
 - Debug tools (DebugLogger + DebugHUD). Restart with R key, ESC → main menu.
@@ -80,9 +81,91 @@ Speed progression, piece preview queue, game over / win states, main menu scene,
 - **4-side spawn indicators**: colored edge bars highlight the active spawn side on each new piece.
 - **Classic shape pool**: Dot/Duo/Tri pieces excluded in Classic mode (standard 7-bag shapes only).
 
-## Stage 6 — Future (Post-MVP)
+## Stage 6 — Classic Mode Depth (Planned)
 
-Puzzle mode (exact fill), custom shapes, endless mode, mobile packaging, optional Matter.js wobble.
+Features that make Classic mode feel complete and strategic.
+
+### 6a — Per-side "Up Next" preview
+
+Currently there is one global next-piece queue. Classic spawns from all 4 sides, so the player has no way to plan.
+
+**Design:**
+
+- `GameSimulation` maintains 4 independent `nextPiece` slots, one per side (`top | right | bottom | left`).
+- On spawn, the piece for the active side is consumed and immediately replaced.
+- `NEXT_PIECE_CHANGED` event carries `{ side, piece }` so the UI can update the correct panel.
+
+**Visualisation options (pick one before implementing):**
+
+- Four small preview boxes in the four screen corners, each labelled with a directional arrow.
+- Four mini-panels inset along each board edge, centred on that edge (more spatial — player sees "the next piece coming from the left" on the left side of the board).
+- A 2×2 grid of previews somewhere in the HUD, rows = top/bottom, cols = left/right.
+
+Corner panels are the simplest starting point; edge-inset panels are more intuitive but require BoardView coordinate helpers.
+
+### 6b — Hold mechanic
+
+Standard Tetris hold: press a key (e.g. **C** or **Shift**) to swap the current falling piece with a held piece. Can only be used once per piece (resets on land).
+
+**Model changes (`GameSimulation`):**
+
+- `heldPiece: PieceModel | null` field.
+- `holdUsed: boolean` flag, reset to `false` in `spawnPiece()`.
+- `holdPiece()` method: if `holdUsed` → do nothing. Swap `currentPiece` ↔ `heldPiece`; if `heldPiece` was null, immediately spawn the next queued piece for this side. Reset piece position to spawn edge. Set `holdUsed = true`. Emit `HOLD_CHANGED` event.
+
+**UI:** A "HOLD" panel (similar to NEXT panel) in UIScene. Greyed-out when `holdUsed` is true.
+
+**Input:** Add `'hold'` to `GameAction`; wire to C / Shift in `InputManager`. Handle in `GameScene.handleAction`.
+
+### 6c — Classic mode starts with a 1×1 center block
+
+The plus-shaped center in `CLASSIC_CONFIG` is actually 5 cells — too large for a 30×30 board and makes line-clears too easy near the center. Classic should start with a single 1×1 center cell so the target zone is fully clearable.
+
+**Change:** Update `CLASSIC_CONFIG` in `LevelConfig.ts`:
+
+```ts
+centerCells: [{ col: 15, row: 15 }],
+targetCells: rect(13, 13, 5, 5),  // unchanged
+```
+
+The single center cell still blocks passage; cleared rows/cols compact up to but not over it (the `!cell.isCenter` guards in `clearRow`/`shiftInward` already handle this correctly).
+
+### 6d — Growing center block every 10 lines
+
+After every 10 lines cleared in Classic, the center obstacle grows by one ring, turning 1×1 → 3×3 → 5×5 etc. This progressively shrinks the clearable target zone and forces the player to adapt.
+
+**Model changes (`GameSimulation`):**
+
+- Track `totalLinesCleared`. On each `LINES_CLEARED` event check `Math.floor(totalLinesCleared / 10) > Math.floor((totalLinesCleared - n) / 10)` to detect a threshold crossing.
+- On crossing: compute new center size `= 1 + 2 * tier` (tier 0 → 1×1, tier 1 → 3×3, tier 2 → 5×5 …). Call `board.growCenter(newSize)`.
+
+**`BoardModel.growCenter(size)`** — new method:
+
+- Computes the new center rectangle centred on board midpoint.
+- Marks new cells as `isCenter = true`, `occupied = true`.
+- Any player-placed blocks in the newly-occupied cells are evicted (set `occupied = true`, `color = null` — they simply vanish; consider emitting a `CENTER_GREW` event so JuiceManager can flash those cells).
+
+**UI:** Emit `CENTER_GREW` event; GameScene can do a brief camera zoom-pulse via `JuiceManager.playWinEffect()`.
+
+### 6e — High score system
+
+Persist the top scores across sessions using `localStorage`.
+
+**Design:**
+
+- `HighScoreService` (new file `src/game/services/HighScoreService.ts`) — pure TS, no Phaser.
+  - `load(): ScoreEntry[]` — reads JSON from `localStorage`.
+  - `save(entries: ScoreEntry[]): void`
+  - `submit(name: string, score: number, lines: number, date: string): ScoreEntry[]` — inserts, sorts descending by score, trims to top 10, saves, returns updated list.
+- `ScoreEntry`: `{ name: string; score: number; lines: number; date: string }`.
+- On Classic game-over, transition to a name-entry screen (or inline text input using Phaser's DOM input) before showing the leaderboard.
+- **MainMenuScene** gets a "HIGH SCORES" button that launches a `HighScoreScene` (new scene, reads from `HighScoreService`).
+
+---
+
+## Stage 7 — Future (Post-Classic)
+
+Puzzle mode (exact fill), custom shapes, mobile packaging, optional Matter.js wobble, online leaderboard via a lightweight backend.
 
 ---
 
