@@ -25,6 +25,7 @@ export class DebugLogger {
         eventBus.on(GameEvents.PIECE_MOVED, this.onPieceMoved);
         eventBus.on(GameEvents.PIECE_ROTATED, this.onPieceRotated);
         eventBus.on(GameEvents.PIECE_LANDED, this.onPieceLanded);
+        eventBus.on(GameEvents.LINES_CLEARED, this.onLinesCleared);
         eventBus.on(GameEvents.GAME_WON, this.onGameWon);
         eventBus.on(GameEvents.GAME_OVER, this.onGameOver);
         eventBus.on(GameEvents.SCORE_CHANGED, this.onScoreChanged);
@@ -36,6 +37,7 @@ export class DebugLogger {
         eventBus.off(GameEvents.PIECE_MOVED, this.onPieceMoved);
         eventBus.off(GameEvents.PIECE_ROTATED, this.onPieceRotated);
         eventBus.off(GameEvents.PIECE_LANDED, this.onPieceLanded);
+        eventBus.off(GameEvents.LINES_CLEARED, this.onLinesCleared);
         eventBus.off(GameEvents.GAME_WON, this.onGameWon);
         eventBus.off(GameEvents.GAME_OVER, this.onGameOver);
         eventBus.off(GameEvents.SCORE_CHANGED, this.onScoreChanged);
@@ -85,8 +87,18 @@ export class DebugLogger {
         if (!DebugLogger.enabled) return;
         const cellStr = data.cells.map((c) => `(${c.col},${c.row})`).join(' ');
         const targetFilled = this.countTargetFilled();
-        console.group(
+        // Note: board state logged here is pre-clear; LINES_CLEARED will log post-clear state
+        console.log(
             `${TAG} PIECE_LANDED — side=${data.side} cells=[${cellStr}] landed=${this.sim.piecesLanded} target=${targetFilled.filled}/${targetFilled.total} phase=${this.sim.phase}`,
+        );
+    };
+
+    private onLinesCleared = (data: { rows: number[]; cols: number[]; total: number; score: number }) => {
+        if (!DebugLogger.enabled) return;
+        const rStr = data.rows.length ? `rows=[${data.rows.join(',')}]` : '';
+        const cStr = data.cols.length ? `cols=[${data.cols.join(',')}]` : '';
+        console.group(
+            `${TAG} LINES_CLEARED — ${[rStr, cStr].filter(Boolean).join(' ')} total=${data.total} score=+${data.score}`,
         );
         this.logBoard();
         console.groupEnd();

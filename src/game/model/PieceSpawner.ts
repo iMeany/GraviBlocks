@@ -10,7 +10,7 @@
 
 import { PIECE_COLORS } from '../config/Constants';
 import type { SpawnMode } from '../config/LevelConfig';
-import { PieceModel, SHAPE_NAMES } from './PieceModel';
+import { PieceModel, SHAPE_NAMES, CLASSIC_SHAPE_NAMES } from './PieceModel';
 
 export type Direction = 'top' | 'bottom' | 'left' | 'right';
 
@@ -88,25 +88,26 @@ export class PieceSpawner {
             if (o.dy > maxDy) maxDy = o.dy;
         }
 
+        // +1 / -1 inset keeps the whole piece one cell inside the board edge,
+        // preventing any clipping when pieces have asymmetric bounding boxes.
         switch (side) {
             case 'top':
-                // Pivot row must be ≥ -minDy so that (row + minDy) ≥ 0
-                return { col: midCol, row: -minDy };
+                return { col: midCol, row: -minDy + 1 };
             case 'bottom':
-                // Pivot row must be ≤ (height-1) - maxDy so that (row + maxDy) < height
-                return { col: midCol, row: boardHeight - 1 - maxDy };
+                return { col: midCol, row: boardHeight - 1 - maxDy - 1 };
             case 'left':
-                // Pivot col must be ≥ -minDx
-                return { col: -minDx, row: midRow };
+                return { col: -minDx + 1, row: midRow };
             case 'right':
-                // Pivot col must be ≤ (width-1) - maxDx
-                return { col: boardWidth - 1 - maxDx, row: midRow };
+                return { col: boardWidth - 1 - maxDx - 1, row: midRow };
         }
     }
 
-    /** Create a random piece with a random color. */
-    static randomPiece(): PieceModel {
-        const name = SHAPE_NAMES[Math.floor(Math.random() * SHAPE_NAMES.length)];
+    /** Create a random piece with a random color.
+     *  Pass `classic: true` to restrict to full tetrominoes (no Dot/Duo/Tri).
+     */
+    static randomPiece(classic = false): PieceModel {
+        const pool = classic ? CLASSIC_SHAPE_NAMES : SHAPE_NAMES;
+        const name = pool[Math.floor(Math.random() * pool.length)];
         const colorHex = PIECE_COLORS[Math.floor(Math.random() * PIECE_COLORS.length)];
         // Convert numeric hex to CSS string for the model (view converts back)
         const color = `#${colorHex.toString(16).padStart(6, '0')}`;

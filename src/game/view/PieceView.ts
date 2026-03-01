@@ -84,10 +84,10 @@ export class PieceView {
                 cellSize - 2,
                 cellSize - 2,
                 COLOR_CELL_GHOST,
-                0, // fillColor, fillAlpha
+                0.18, // slight fill for visibility
             );
-            rect.setStrokeStyle(1, COLOR_CELL_GHOST, 0.25);
-            rect.setAlpha(0.2);
+            rect.setStrokeStyle(2, COLOR_CELL_GHOST, 0.75);
+            rect.setAlpha(0.55);
             this.container.add(rect);
             this.ghostBlocks.push(rect);
         }

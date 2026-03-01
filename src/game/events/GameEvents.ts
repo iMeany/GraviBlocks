@@ -21,4 +21,10 @@ export const GameEvents = {
     SCORE_CHANGED: 'score-changed',
     /** Level loaded / changed */
     LEVEL_LOADED: 'level-loaded',
+    /** Classic mode: one or more full rows/cols were cleared this turn */
+    LINES_CLEARED: 'lines-cleared',
+    /** Brief score popup at board center (for juice) */
+    SCORE_POPUP: 'score-popup',
+    /** Next-piece queue changed — carry the new next PieceModel */
+    NEXT_PIECE_CHANGED: 'next-piece-changed',
 } as const;

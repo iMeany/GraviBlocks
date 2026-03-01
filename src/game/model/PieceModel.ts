@@ -70,6 +70,9 @@ export const SHAPES: Record<string, Offset[]> = {
 
 export const SHAPE_NAMES = Object.keys(SHAPES);
 
+/** Full tetrominoes only — used by Classic mode (no Dot/Duo/Tri fillers). */
+export const CLASSIC_SHAPE_NAMES = ['I', 'O', 'T', 'S', 'Z', 'L', 'J'];
+
 export class PieceModel {
     offsets: Offset[];
     readonly shapeName: string;

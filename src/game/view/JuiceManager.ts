@@ -96,6 +96,94 @@ export class JuiceManager {
         this.emitParticles(data.cells, data.color);
     }
 
+    /**
+     * Animate a line-clear event:
+     *  1. boardView.sync() immediately (board model already has final state).
+     *  2. Flash white overlay rects over the cleared cells, then fade out.
+     *  3. For each survivor cell, create a temp overlay at its OLD pixel position
+     *     and tween it to its NEW pixel position (the compact-toward-center slide).
+     */
+    playLineClearEffect(data: {
+        clearedCells: { col: number; row: number; color: string }[];
+        survivors:    { col: number; row: number; color: string }[];
+        finalCells:   { col: number; row: number; color: string }[];
+        centerRow: number;
+        centerCol: number;
+        total: number;
+    }): void {
+        const cs      = this.boardView.getCellSize();
+        const cont    = this.boardView.getContainer();
+
+        // 1. Sync board to final state first
+        this.boardView.sync();
+
+        // 2. Flash cleared cells
+        for (const c of data.clearedCells) {
+            const { x, y } = this.boardView.gridToPixel(c.col, c.row);
+            const r = this.scene.add.rectangle(x, y, cs - 2, cs - 2, 0xffffff, 1);
+            r.setDepth(20);
+            cont.add(r);
+            this.scene.tweens.add({
+                targets: r,
+                alpha: 0,
+                duration: 260,
+                ease: 'Quad.In',
+                onComplete: () => r.destroy(),
+            });
+        }
+
+        // 3. Slide survivor overlays from old → new positions
+        if (data.survivors.length === 0 || data.finalCells.length === 0) return;
+
+        // Greedy nearest-neighbour match: each survivor → closest unmatched finalCell
+        const used = new Array<boolean>(data.finalCells.length).fill(false);
+        const pairs: { survivor: typeof data.survivors[0]; final: typeof data.finalCells[0] }[] = [];
+
+        for (const surv of data.survivors) {
+            let bestIdx  = -1;
+            let bestDist = Infinity;
+            for (let i = 0; i < data.finalCells.length; i++) {
+                if (used[i]) continue;
+                const f = data.finalCells[i];
+                const d = Math.abs(surv.col - f.col) + Math.abs(surv.row - f.row);
+                if (d < bestDist) { bestDist = d; bestIdx = i; }
+            }
+            if (bestIdx === -1) continue;
+            used[bestIdx] = true;
+            // Only animate if the cell actually moved
+            if (bestDist > 0) pairs.push({ survivor: surv, final: data.finalCells[bestIdx] });
+        }
+
+        for (const { survivor, final } of pairs) {
+            const oldPos = this.boardView.gridToPixel(survivor.col, survivor.row);
+            const newPos = this.boardView.gridToPixel(final.col,    final.row);
+            const tint   = Number.parseInt(survivor.color.replace('#', ''), 16);
+
+            const overlay = this.scene.add.rectangle(oldPos.x, oldPos.y, cs - 2, cs - 2, tint, 0.85);
+            overlay.setDepth(15);
+            cont.add(overlay);
+
+            this.scene.tweens.add({
+                targets: overlay,
+                x: newPos.x,
+                y: newPos.y,
+                duration: 200,
+                ease: 'Quad.Out',
+                delay: 40, // start just after flash
+                onComplete: () => {
+                    // Fade out quickly — the underlying board cell already shows the correct color
+                    this.scene.tweens.add({
+                        targets: overlay,
+                        alpha: 0,
+                        duration: 80,
+                        ease: 'Linear',
+                        onComplete: () => overlay.destroy(),
+                    });
+                },
+            });
+        }
+    }
+
     /** Celebration effect for level completion. */
     playWinEffect(): void {
         // Gentle zoom pulse — no flash, no big shake

@@ -2,7 +2,10 @@
 
 A web-based grid-logic 2D puzzle game built with Phaser 3, TypeScript, and Vite.
 
-Pieces spawn from four sides and fall toward a static center piece. Fill the target shape to win.
+Pieces spawn from four sides and fall toward a static center piece. Two modes:
+
+- **Normal** — fill the target zone without spilling outside it.
+- **Classic** — Tetris-style endless play: fill rows or columns in the target zone to clear them; blocks compact toward the center. Score attacks and speed progression.
 
 ## Quick Start
 
@@ -47,12 +50,14 @@ The model emits events (`piece-landed`, `game-won`). Views subscribe and react. 
 
 | Key | Action |
 | --- | --- |
-| Arrow keys | Move piece (absolute screen direction, perpendicular to fall) |
+| Arrow keys (perpendicular to fall) | Move piece left / right / up / down |
+| Arrow key (fall direction) | Soft drop — accelerate one step toward center |
 | Z | Rotate counter-clockwise |
 | X | Rotate clockwise |
-| Space | Hard drop |
+| Space | Hard drop (piece teleports to landing position; brief lock-delay before locking) |
 | P | Pause / unpause |
 | R | Restart current level |
+| ESC | Return to main menu |
 | ` (backtick) | Toggle debug HUD |
 
 Swipe and tap are supported for touch input.

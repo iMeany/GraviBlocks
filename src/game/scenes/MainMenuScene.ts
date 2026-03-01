@@ -43,27 +43,61 @@ export class MainMenuScene extends Phaser.Scene {
             })
             .setOrigin(0.5);
 
-        // Play button
-        const playBtn = this.add
-            .text(width / 2, height * 0.6, '[ PLAY ]', {
-                fontSize: '28px',
+        // Mode label
+        this.add
+            .text(width / 2, height * 0.52, 'SELECT MODE', {
+                fontSize: '13px',
                 fontFamily: 'monospace',
-                color: '#50e3c2',
+                color: '#556677',
             })
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true });
+            .setOrigin(0.5);
 
-        playBtn.on('pointerover', () => playBtn.setColor('#ffffff'));
-        playBtn.on('pointerout', () => playBtn.setColor('#50e3c2'));
-        playBtn.on('pointerdown', () => {
-            this.scene.start('GameScene', { levelIndex: 0 });
-        });
+        // Helper to make a mode button
+        const makeBtn = (label: string, x: number, y: number, mode: 'normal' | 'classic') => {
+            const btn = this.add
+                .text(x, y, label, {
+                    fontSize: '24px',
+                    fontFamily: 'monospace',
+                    color: '#50e3c2',
+                })
+                .setOrigin(0.5)
+                .setInteractive({ useHandCursor: true });
 
-        // Space key also starts the game
+            btn.on('pointerover', () => btn.setColor('#ffffff'));
+            btn.on('pointerout', () => btn.setColor('#50e3c2'));
+            btn.on('pointerdown', () => {
+                this.scene.start('GameScene', { levelIndex: 0, mode });
+            });
+            return btn;
+        };
+
+        makeBtn('[ NORMAL ]', width / 2 - 110, height * 0.61, 'normal');
+        makeBtn('[ CLASSIC ]', width / 2 + 110, height * 0.61, 'classic');
+
+        // Mode descriptions
+        this.add
+            .text(width / 2 - 110, height * 0.68, 'Fill the target\nwithout spillage', {
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                color: '#445566',
+                align: 'center',
+            })
+            .setOrigin(0.5);
+
+        this.add
+            .text(width / 2 + 110, height * 0.68, 'Clear lines,\nscore forever', {
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                color: '#445566',
+                align: 'center',
+            })
+            .setOrigin(0.5);
+
+        // Space key starts normal mode
         if (this.input.keyboard) {
             const spaceKey = this.input.keyboard.addKey('SPACE');
             spaceKey.once('down', () => {
-                this.scene.start('GameScene', { levelIndex: 0 });
+                this.scene.start('GameScene', { levelIndex: 0, mode: 'normal' });
             });
         }
 
@@ -71,7 +105,7 @@ export class MainMenuScene extends Phaser.Scene {
         this.add
             .text(
                 width / 2,
-                height * 0.78,
+                height * 0.84,
                 ['Arrow Keys — Move', 'Z / X — Rotate', 'Space — Hard Drop', 'P — Pause'].join('\n'),
                 {
                     fontSize: '13px',

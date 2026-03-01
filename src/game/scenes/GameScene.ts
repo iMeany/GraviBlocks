@@ -4,8 +4,9 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { BASE_FALL_INTERVAL, BOARD_PADDING_RATIO } from '../config/Constants';
-import { LEVELS } from '../config/LevelConfig';
+import { BASE_FALL_INTERVAL, BOARD_PADDING_RATIO, COLOR_SIDE_ACTIVE, COLOR_SIDE_INACTIVE, LOCK_DELAY_MS, SIDE_INDICATOR_H } from '../config/Constants';
+import { CLASSIC_CONFIG, LEVELS } from '../config/LevelConfig';
+import type { GameMode } from '../config/LevelConfig';
 import { DebugHUD } from '../debug/DebugHUD';
 import { DebugLogger } from '../debug/DebugLogger';
 import { eventBus } from '../events/EventBus';
@@ -27,16 +28,23 @@ export class GameScene extends Phaser.Scene {
 
     private fallTimer = 0;
     private fallInterval = BASE_FALL_INTERVAL;
+    /** Counts down after hard-drop; when it reaches 0 the piece is committed. -1 = inactive. */
+    private lockDelayTimer = -1;
     private levelIndex = 0;
+    private mode: GameMode = 'normal';
     private paused = false;
     private cleaned = false;
+
+    /** Side indicator bars (top / right / bottom / left) */
+    private sideIndicators: Phaser.GameObjects.Rectangle[] = [];
 
     constructor() {
         super({ key: 'GameScene' });
     }
 
-    init(data: { levelIndex?: number }): void {
+    init(data: { levelIndex?: number; mode?: GameMode }): void {
         this.levelIndex = data.levelIndex ?? 0;
+        this.mode = data.mode ?? 'normal';
         this.paused = false;
         this.cleaned = false;
     }
@@ -44,8 +52,10 @@ export class GameScene extends Phaser.Scene {
     create(): void {
         const { width, height } = this.scale;
 
-        // Load level config
-        const config = LEVELS[this.levelIndex % LEVELS.length];
+        // Load level config (classic mode uses its own fixed config)
+        const config = this.mode === 'classic'
+            ? CLASSIC_CONFIG
+            : LEVELS[this.levelIndex % LEVELS.length];
         this.fallInterval = config.fallInterval;
 
         // Compute cell size to fit board on screen
@@ -54,7 +64,7 @@ export class GameScene extends Phaser.Scene {
 
         // Initialize simulation
         this.sim = new GameSimulation();
-        this.sim.loadLevel(config);
+        this.sim.loadLevel(config, this.mode);
 
         // Initialize views
         this.boardView = new BoardView(this, this.sim.board, cellSize);
@@ -74,6 +84,22 @@ export class GameScene extends Phaser.Scene {
         eventBus.on(GameEvents.PIECE_LANDED, this.onPieceLanded);
         eventBus.on(GameEvents.GAME_WON, this.onGameWon);
         eventBus.on(GameEvents.GAME_OVER, this.onGameOver);
+        eventBus.on(GameEvents.LINES_CLEARED, this.onLinesCleared);
+        eventBus.on(GameEvents.SCORE_POPUP, this.onScorePopup);
+
+        // Build side-spawn indicators (thin bars at screen edge, scroll-factor 0)
+        const indicatorData: [number, number, number, number][] = [
+            // x, y, w, h
+            [width / 2, SIDE_INDICATOR_H / 2, width, SIDE_INDICATOR_H],          // top
+            [width - SIDE_INDICATOR_H / 2, height / 2, SIDE_INDICATOR_H, height], // right
+            [width / 2, height - SIDE_INDICATOR_H / 2, width, SIDE_INDICATOR_H], // bottom
+            [SIDE_INDICATOR_H / 2, height / 2, SIDE_INDICATOR_H, height],         // left
+        ];
+        this.sideIndicators = indicatorData.map(([x, y, w, h]) => {
+            const r = this.add.rectangle(x, y, w, h, COLOR_SIDE_INACTIVE);
+            r.setScrollFactor(0).setDepth(50).setAlpha(0.7);
+            return r;
+        });
 
         // Debug tools (toggle HUD with ` key, logs to browser console)
         this.debugLogger = new DebugLogger(this.sim);
@@ -82,7 +108,7 @@ export class GameScene extends Phaser.Scene {
         (window as unknown as Record<string, unknown>).__gravi = this.debugLogger;
 
         // Launch UI overlay scene
-        this.scene.launch('UIScene', { levelName: config.name });
+        this.scene.launch('UIScene', { levelName: config.name, mode: this.mode });
 
         // Spawn the first piece
         this.sim.spawnPiece();
@@ -95,6 +121,16 @@ export class GameScene extends Phaser.Scene {
         if (this.sim.phase === 'won' || this.sim.phase === 'game-over') return;
 
         this.inputManager.update();
+
+        // Lock-delay countdown after hard drop
+        if (this.sim.phase === 'lock-delay') {
+            this.lockDelayTimer -= delta;
+            if (this.lockDelayTimer <= 0) {
+                this.lockDelayTimer = -1;
+                this.sim.commitLand();
+            }
+            return; // skip auto-fall during grace period
+        }
 
         // Automatic fall on timer
         this.fallTimer += delta;
@@ -117,26 +153,44 @@ export class GameScene extends Phaser.Scene {
             this.togglePause();
             return;
         }
+        if (action === 'quit') {
+            this.cleanUp();
+            this.scene.start('MainMenuScene');
+            return;
+        }
         if (action === 'restart') {
             this.cleanUp();
-            this.scene.restart({ levelIndex: this.levelIndex });
+            this.scene.restart({ levelIndex: this.levelIndex, mode: this.mode });
             return;
         }
         if (this.paused) return;
 
+        // Helper: does this move action align with the current fall direction?
+        const isSoftDrop = (a: GameAction): boolean => {
+            const fd = this.sim.fallDir;
+            return (
+                (a === 'move-down'  && fd.dy > 0) ||
+                (a === 'move-up'    && fd.dy < 0) ||
+                (a === 'move-right' && fd.dx > 0) ||
+                (a === 'move-left'  && fd.dx < 0)
+            );
+        };
+
         switch (action) {
             case 'move-left':
-                this.sim.moveAbsolute('left');
-                break;
             case 'move-right':
-                this.sim.moveAbsolute('right');
-                break;
             case 'move-up':
-                this.sim.moveAbsolute('up');
+            case 'move-down': {
+                const dir = action.replace('move-', '') as 'left' | 'right' | 'up' | 'down';
+                if (isSoftDrop(action) && this.sim.phase === 'falling') {
+                    // Soft drop: advance one step in fall direction and reset timer
+                    this.sim.tick();
+                    this.fallTimer = 0;
+                } else {
+                    this.sim.moveAbsolute(dir);
+                }
                 break;
-            case 'move-down':
-                this.sim.moveAbsolute('down');
-                break;
+            }
             case 'rotate-cw':
                 this.sim.rotatePiece('CW');
                 break;
@@ -144,7 +198,11 @@ export class GameScene extends Phaser.Scene {
                 this.sim.rotatePiece('CCW');
                 break;
             case 'hard-drop':
-                this.sim.hardDrop();
+                if (this.sim.phase === 'falling') {
+                    this.sim.hardDrop();
+                    this.lockDelayTimer = LOCK_DELAY_MS;
+                    this.fallTimer = 0;
+                }
                 break;
         }
     }
@@ -158,10 +216,18 @@ export class GameScene extends Phaser.Scene {
     // Event handlers
     // -----------------------------------------------------------------------
 
-    private onPieceSpawned = (data: { piece: unknown; col: number; row: number }) => {
+    private onPieceSpawned = (data: { piece: unknown; col: number; row: number; side: import('../model/PieceSpawner').Direction }) => {
         if (!this.sim.currentPiece) return;
         this.pieceView.show(this.sim.currentPiece, data.col, data.row);
         this.updateGhost();
+
+        // Light up the active side indicator, dim others
+        const sideOrder: import('../model/PieceSpawner').Direction[] = ['top', 'right', 'bottom', 'left'];
+        this.sideIndicators.forEach((bar, i) => {
+            const isActive = sideOrder[i] === data.side;
+            bar.setFillStyle(isActive ? COLOR_SIDE_ACTIVE : COLOR_SIDE_INACTIVE);
+            bar.setAlpha(isActive ? 1 : 0.4);
+        });
     };
 
     private onPieceMoved = (_data: { col: number; row: number }) => {
@@ -185,6 +251,47 @@ export class GameScene extends Phaser.Scene {
         this.fallTimer = 0; // reset so there's a brief pause before next piece
     };
 
+    private onLinesCleared = (data: {
+        rows: number[]; cols: number[]; total: number; score: number;
+        clearedCells: { col: number; row: number; color: string }[];
+        survivors:    { col: number; row: number; color: string }[];
+        finalCells:   { col: number; row: number; color: string }[];
+        centerRow: number; centerCol: number;
+    }) => {
+        // JuiceManager handles boardView.sync() internally before building overlays
+        this.juice.playLineClearEffect(data);
+        const intensity = 0.006 * data.total;
+        this.cameras.main.shake(120, intensity);
+    };
+
+    private onScorePopup = (data: { amount: number; type: 'land' | 'clear' }) => {
+        const { width, height } = this.scale;
+        const color = data.type === 'clear' ? '#50e3c2' : '#f8e71c';
+        const label = data.type === 'clear'
+            ? `+${data.amount} CLEAR!`
+            : `+${data.amount}`;
+
+        const t = this.add
+            .text(width / 2, height / 2 - 40, label, {
+                fontSize: data.type === 'clear' ? '22px' : '16px',
+                fontFamily: 'monospace',
+                color,
+                fontStyle: 'bold',
+            })
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setDepth(60);
+
+        this.tweens.add({
+            targets: t,
+            y: t.y - 55,
+            alpha: 0,
+            duration: 900,
+            ease: 'Sine.Out',
+            onComplete: () => t.destroy(),
+        });
+    };
+
     private onGameWon = () => {
         this.juice.playWinEffect();
         // Wait for zoom pulse, then reset camera and show overlay
@@ -192,7 +299,7 @@ export class GameScene extends Phaser.Scene {
             this.cameras.main.setZoom(1);
             this.showOverlay('YOU WIN!', '#50e3c2', '[ NEXT LEVEL ]', () => {
                 this.cleanUp();
-                this.scene.restart({ levelIndex: this.levelIndex + 1 });
+                this.scene.restart({ levelIndex: this.levelIndex + 1, mode: this.mode });
             });
         });
     };
@@ -202,7 +309,7 @@ export class GameScene extends Phaser.Scene {
             this.cameras.main.setZoom(1);
             this.showOverlay('GAME OVER', '#e94560', '[ RETRY ]', () => {
                 this.cleanUp();
-                this.scene.restart({ levelIndex: this.levelIndex });
+                this.scene.restart({ levelIndex: this.levelIndex, mode: this.mode });
             });
         });
     };
@@ -293,6 +400,8 @@ export class GameScene extends Phaser.Scene {
         eventBus.off(GameEvents.PIECE_LANDED, this.onPieceLanded);
         eventBus.off(GameEvents.GAME_WON, this.onGameWon);
         eventBus.off(GameEvents.GAME_OVER, this.onGameOver);
+        eventBus.off(GameEvents.LINES_CLEARED, this.onLinesCleared);
+        eventBus.off(GameEvents.SCORE_POPUP, this.onScorePopup);
         this.debugLogger.destroy();
         this.debugHUD.destroy();
         this.juice.destroy();

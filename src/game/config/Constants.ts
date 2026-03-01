@@ -27,11 +27,23 @@ export const PIECE_COLORS: number[] = [
 
 /** Timing (ms) */
 export const BASE_FALL_INTERVAL = 600; // ms between automatic fall steps
-export const INPUT_REPEAT_RATE = 150; // ms between repeated key inputs
+export const INPUT_REPEAT_RATE = 150;  // ms between repeated lateral key inputs
+export const SOFT_DROP_RATE    = 80;   // ms between repeated soft-drop steps
+export const LOCK_DELAY_MS     = 150;  // grace period after hard-drop to nudge piece
 export const TWEEN_MOVE_MS = 60; // piece grid-move interpolation
 export const TWEEN_SQUASH_MS = 80;
 export const TWEEN_STRETCH_MS = 100;
 export const TWEEN_SETTLE_MS = 120;
+
+/** Side spawn indicator */
+export const COLOR_SIDE_ACTIVE   = 0x50e3c2; // bright teal
+export const COLOR_SIDE_INACTIVE = 0x1e2a3a; // near-invisible
+export const SIDE_INDICATOR_H    = 6;         // px thickness
+export const SIDE_INDICATOR_TWEEN_MS = 120;
+
+/** Score popup */
+export const COLOR_SCORE_POPUP_LAND  = 0xf8e71c;
+export const COLOR_SCORE_POPUP_CLEAR = 0x50e3c2;
 
 /** Screen shake */
 export const SHAKE_DURATION = 100;

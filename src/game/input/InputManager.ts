@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { INPUT_REPEAT_RATE } from '../config/Constants';
+import { SOFT_DROP_RATE } from '../config/Constants';
 
 export type GameAction =
     | 'move-left'
@@ -15,7 +15,8 @@ export type GameAction =
     | 'rotate-ccw'
     | 'hard-drop'
     | 'pause'
-    | 'restart';
+    | 'restart'
+    | 'quit';
 
 export class InputManager {
     private scene: Phaser.Scene;
@@ -25,6 +26,7 @@ export class InputManager {
     private keySpace!: Phaser.Input.Keyboard.Key;
     private keyP!: Phaser.Input.Keyboard.Key;
     private keyR!: Phaser.Input.Keyboard.Key;
+    private keyEsc!: Phaser.Input.Keyboard.Key;
 
     /** Callbacks registered by the scene */
     private actionListeners: ((action: GameAction) => void)[] = [];
@@ -39,6 +41,7 @@ export class InputManager {
             this.keySpace = scene.input.keyboard.addKey('SPACE');
             this.keyP = scene.input.keyboard.addKey('P');
             this.keyR = scene.input.keyboard.addKey('R');
+            this.keyEsc = scene.input.keyboard.addKey('ESC');
 
             // Prevent browser defaults for game keys
             scene.input.keyboard.addCapture(['UP', 'DOWN', 'LEFT', 'RIGHT', 'SPACE']);
@@ -60,17 +63,17 @@ export class InputManager {
     update(): void {
         if (!this.scene.input.keyboard) return;
 
-        // Rate-limited directional movement
-        if (this.scene.input.keyboard.checkDown(this.cursors.left, INPUT_REPEAT_RATE)) {
+        // Rate-limited directional movement (SOFT_DROP_RATE for snappy first-press + fast hold)
+        if (this.scene.input.keyboard.checkDown(this.cursors.left, SOFT_DROP_RATE)) {
             this.emit('move-left');
         }
-        if (this.scene.input.keyboard.checkDown(this.cursors.right, INPUT_REPEAT_RATE)) {
+        if (this.scene.input.keyboard.checkDown(this.cursors.right, SOFT_DROP_RATE)) {
             this.emit('move-right');
         }
-        if (this.scene.input.keyboard.checkDown(this.cursors.up, INPUT_REPEAT_RATE)) {
+        if (this.scene.input.keyboard.checkDown(this.cursors.up, SOFT_DROP_RATE)) {
             this.emit('move-up');
         }
-        if (this.scene.input.keyboard.checkDown(this.cursors.down, INPUT_REPEAT_RATE)) {
+        if (this.scene.input.keyboard.checkDown(this.cursors.down, SOFT_DROP_RATE)) {
             this.emit('move-down');
         }
 
@@ -89,6 +92,9 @@ export class InputManager {
         }
         if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
             this.emit('restart');
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
+            this.emit('quit');
         }
     }
 

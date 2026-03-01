@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 export type SpawnMode = 'random' | 'cw' | 'ccw';
+export type GameMode = 'normal' | 'classic';
 
 export interface LevelConfig {
     /** Display name */
@@ -48,48 +49,61 @@ function plus(cx: number, cy: number): { col: number; row: number }[] {
 }
 
 /**
- * Level 1: 15×15 board, + shaped center, 5×5 target zone, CW spawn.
+ * Level 1: 30×30 board, + shaped center, 5×5 target zone, CW spawn.
  * Large board gives the player time to think as blocks travel toward center.
  */
 const level1: LevelConfig = {
     name: 'Level 1 — First Steps',
-    boardWidth: 15,
-    boardHeight: 15,
-    centerCells: plus(7, 7),
-    targetCells: rect(5, 5, 5, 5),
+    boardWidth: 30,
+    boardHeight: 30,
+    centerCells: plus(15, 15),
+    targetCells: rect(13, 13, 5, 5),
     spawnMode: 'cw',
     fallInterval: 600,
 };
 
 /**
- * Level 2: 11×11 board, 2×2 center, 5×5 target.
+ * Level 2: 22×22 board, 2×2 center, 5×5 target.
  */
 const level2: LevelConfig = {
     name: 'Level 2 — Growing Block',
-    boardWidth: 11,
-    boardHeight: 11,
-    centerCells: rect(4, 4, 2, 2),
-    targetCells: rect(3, 3, 5, 5),
+    boardWidth: 22,
+    boardHeight: 22,
+    centerCells: rect(10, 10, 2, 2),
+    targetCells: rect(9, 9, 5, 5),
     spawnMode: 'cw',
     fallInterval: 500,
 };
 
 /**
- * Level 3: 11×11, 1×1 center, cross-shaped target.
+ * Level 3: 22×22, 1×1 center, cross-shaped target.
  */
 const level3: LevelConfig = {
     name: 'Level 3 — The Cross',
-    boardWidth: 11,
-    boardHeight: 11,
-    centerCells: [{ col: 5, row: 5 }],
+    boardWidth: 22,
+    boardHeight: 22,
+    centerCells: [{ col: 11, row: 11 }],
     targetCells: [
         // vertical bar
-        ...rect(5, 2, 1, 7),
+        ...rect(11, 5, 1, 13),
         // horizontal bar
-        ...rect(2, 5, 7, 1),
+        ...rect(5, 11, 13, 1),
     ],
     spawnMode: 'random',
     fallInterval: 500,
 };
 
 export const LEVELS: LevelConfig[] = [level1, level2, level3];
+
+/**
+ * Classic mode — same 30×30 layout as level 1, endless line-clear play.
+ */
+export const CLASSIC_CONFIG: LevelConfig = {
+    name: 'Classic Mode',
+    boardWidth: 30,
+    boardHeight: 30,
+    centerCells: plus(15, 15),
+    targetCells: rect(13, 13, 5, 5),
+    spawnMode: 'random',
+    fallInterval: 600,
+};

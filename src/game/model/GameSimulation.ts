@@ -7,13 +7,14 @@
 // ---------------------------------------------------------------------------
 
 import type { LevelConfig } from '../config/LevelConfig';
+import type { GameMode } from '../config/LevelConfig';
 import { eventBus } from '../events/EventBus';
 import { GameEvents } from '../events/GameEvents';
 import { BoardModel } from './BoardModel';
 import type { PieceModel } from './PieceModel';
 import { type Direction, type FallVector, PieceSpawner } from './PieceSpawner';
 
-export type GamePhase = 'idle' | 'spawning' | 'falling' | 'landing' | 'won' | 'game-over';
+export type GamePhase = 'idle' | 'spawning' | 'falling' | 'lock-delay' | 'landing' | 'won' | 'game-over';
 
 export class GameSimulation {
     board!: BoardModel;
@@ -32,6 +33,9 @@ export class GameSimulation {
     phase: GamePhase = 'idle';
     score = 0;
     piecesLanded = 0;
+    mode: GameMode = 'normal';
+    /** The piece that will spawn next (shown in preview). */
+    nextPiece: PieceModel | null = null;
     private levelConfig!: LevelConfig;
 
     // -----------------------------------------------------------------------
@@ -39,15 +43,18 @@ export class GameSimulation {
     // -----------------------------------------------------------------------
 
     /** Load a level and reset all state. */
-    loadLevel(config: LevelConfig): void {
+    loadLevel(config: LevelConfig, mode: GameMode = 'normal'): void {
         this.levelConfig = config;
+        this.mode = mode;
         this.board = new BoardModel(config.boardWidth, config.boardHeight, config.centerCells, config.targetCells);
         this.spawner = new PieceSpawner(config.spawnMode);
         this.currentPiece = null;
+        this.nextPiece = PieceSpawner.randomPiece(mode === 'classic'); // pre-generate for preview
         this.phase = 'idle';
         this.score = 0;
         this.piecesLanded = 0;
         eventBus.emit(GameEvents.LEVEL_LOADED, config);
+        eventBus.emit(GameEvents.NEXT_PIECE_CHANGED, this.nextPiece);
     }
 
     getLevelConfig(): LevelConfig {
@@ -62,7 +69,11 @@ export class GameSimulation {
     spawnPiece(): boolean {
         if (this.phase === 'won' || this.phase === 'game-over') return false;
 
-        const piece = PieceSpawner.randomPiece();
+        // Use pre-generated next piece, then queue a new one
+        const piece = this.nextPiece ?? PieceSpawner.randomPiece(this.mode === 'classic');
+        this.nextPiece = PieceSpawner.randomPiece(this.mode === 'classic');
+        eventBus.emit(GameEvents.NEXT_PIECE_CHANGED, this.nextPiece);
+
         const side = this.spawner.nextSide();
         const pos = PieceSpawner.spawnPosition(side, this.board.width, this.board.height, piece);
 
@@ -156,7 +167,7 @@ export class GameSimulation {
      * but only allows movement perpendicular to fall direction.
      */
     moveAbsolute(dir: 'up' | 'down' | 'left' | 'right'): boolean {
-        if (this.phase !== 'falling' || !this.currentPiece) return false;
+        if ((this.phase !== 'falling' && this.phase !== 'lock-delay') || !this.currentPiece) return false;
 
         let dCol = 0;
         let dRow = 0;
@@ -197,7 +208,7 @@ export class GameSimulation {
 
     /** Rotate piece. Returns true if successful. */
     rotatePiece(dir: 'CW' | 'CCW'): boolean {
-        if (this.phase !== 'falling' || !this.currentPiece) return false;
+        if ((this.phase !== 'falling' && this.phase !== 'lock-delay') || !this.currentPiece) return false;
 
         // Try rotation; revert if it causes a collision
         if (dir === 'CW') this.currentPiece.rotateCW();
@@ -217,7 +228,9 @@ export class GameSimulation {
         return false;
     }
 
-    /** Instantly drop piece to its final position along the fall axis. */
+    /** Instantly drop piece to its final position along the fall axis, then
+     *  enter lock-delay so the player has a brief window to nudge laterally.
+     */
     hardDrop(): void {
         if (this.phase !== 'falling' || !this.currentPiece) return;
 
@@ -232,6 +245,14 @@ export class GameSimulation {
             col: this.pieceCol,
             row: this.pieceRow,
         });
+
+        // Don't land yet — scene will call commitLand() after grace period
+        this.phase = 'lock-delay';
+    }
+
+    /** Commit the current piece to the board. Called by GameScene after lock-delay. */
+    commitLand(): void {
+        if (this.phase !== 'lock-delay' || !this.currentPiece) return;
         this.landPiece();
     }
 
@@ -275,7 +296,17 @@ export class GameSimulation {
         }
 
         this.piecesLanded++;
-        this.score += 10;
+
+        // --- Landing score ---
+        let landScore = 0;
+        if (this.mode === 'classic') {
+            const onTarget = cells.filter(({ col, row }) => this.board.isTargetCell(col, row)).length;
+            if (onTarget === cells.length) landScore = 100;
+            else if (onTarget > 0)         landScore = 25;
+        } else {
+            landScore = 10; // normal mode flat score
+        }
+        this.score += landScore;
 
         const landedInfo = {
             cells,
@@ -287,10 +318,64 @@ export class GameSimulation {
         this.phase = 'landing';
 
         eventBus.emit(GameEvents.PIECE_LANDED, landedInfo);
+        if (landScore > 0) {
+            eventBus.emit(GameEvents.SCORE_POPUP, { amount: landScore, type: 'land' });
+        }
         eventBus.emit(GameEvents.SCORE_CHANGED, this.score);
 
-        // Check win
-        if (this.board.checkTargetFilled()) {
+        if (this.mode === 'classic') {
+            // --- Line / column clear ---
+            const fullRows = this.board.findFullRows();
+            const fullCols = this.board.findFullCols();
+            const n = fullRows.length + fullCols.length;
+
+            if (n > 0) {
+                // Score: 200 per clear + 50 bonus per extra clear beyond the first
+                const clearScore = 200 * n + 50 * Math.max(0, n - 1);
+                this.score += clearScore;
+
+                // Snapshot occupied target cells BEFORE modifying the board, so the
+                // view can animate the clear+shift effect.
+                const rowSet = new Set(fullRows);
+                const colSet = new Set(fullCols);
+                const clearedCells: { col: number; row: number; color: string }[] = [];
+                const survivors:    { col: number; row: number; color: string }[] = [];
+                for (let r = 0; r < this.board.height; r++) {
+                    for (let c = 0; c < this.board.width; c++) {
+                        const cell = this.board.getCell(c, r);
+                        if (!cell || !cell.isTarget || !cell.occupied || !cell.color) continue;
+                        if (rowSet.has(r) || colSet.has(c)) clearedCells.push({ col: c, row: r, color: cell.color });
+                        else                                  survivors.push({ col: c, row: r, color: cell.color });
+                    }
+                }
+
+                for (const row of fullRows) this.board.clearRow(row);
+                for (const col of fullCols) this.board.clearCol(col);
+                this.board.shiftInward(fullRows, fullCols);
+
+                // Snapshot final occupied target cells so the view can animate the slide
+                const finalCells: { col: number; row: number; color: string }[] = [];
+                for (let r = 0; r < this.board.height; r++) {
+                    for (let c = 0; c < this.board.width; c++) {
+                        const cell = this.board.getCell(c, r);
+                        if (cell?.isTarget && cell.occupied && cell.color) finalCells.push({ col: c, row: r, color: cell.color });
+                    }
+                }
+                const centerRow = Math.floor(this.board.height / 2);
+                const centerCol = Math.floor(this.board.width / 2);
+
+                eventBus.emit(GameEvents.LINES_CLEARED, { rows: fullRows, cols: fullCols, total: n, score: clearScore, clearedCells, survivors, finalCells, centerRow, centerCol });
+                eventBus.emit(GameEvents.SCORE_POPUP, { amount: clearScore, type: 'clear' });
+                eventBus.emit(GameEvents.SCORE_CHANGED, this.score);
+            }
+
+            // Classic is endless — no win condition, just play until spawn is blocked
+            this.phase = 'idle';
+            return;
+        }
+
+        // Normal mode: check win (target filled, no spillage)
+        if (this.board.checkTargetFilled() && !this.board.hasSpillage()) {
             this.phase = 'won';
             eventBus.emit(GameEvents.GAME_WON, { score: this.score });
             return;

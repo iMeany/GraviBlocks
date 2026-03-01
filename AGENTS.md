@@ -4,7 +4,11 @@
 
 ## Game Concept
 
-A web-based grid-logic 2D puzzle game. Tetromino-like pieces spawn from **4 sides** (top, bottom, left, right) and fall **toward a static center piece**. The player fills a target shape by landing blocks against the center. Modes will vary from "fill a square" (standard) to "fill an exact shape with no spillage" (puzzle).
+A web-based grid-logic 2D puzzle game. Tetromino-like pieces spawn from **4 sides** (top, bottom, left, right) and fall **toward a static center piece**. The player fills a target shape by landing blocks against the center. Three modes are planned:
+
+- **Normal** — fill the target zone without any blocks spilling outside it.
+- **Classic** — Tetris-inspired endless mode. Completed rows/columns inside the target zone are cleared; remaining blocks compact toward the center. Score multipliers and speed progression.
+- **Puzzle** (future) — fill an exact shape with zero spillage allowed.
 
 ---
 
@@ -65,7 +69,16 @@ Squash/stretch tweens on landing, screen shake, particle bursts, smooth grid-mov
 
 Speed progression, piece preview queue, game over / win states, main menu scene, pause, scoring, sound placeholders.
 
-**Implemented:** Win/game-over overlays with camera reset, double-cleanup guard, any-key-to-continue. Level transitions working (3 levels). Debug tools (DebugLogger + DebugHUD). Restart with R key.
+**Implemented:**
+- Win/game-over overlays with camera reset, double-cleanup guard, any-key-to-continue.
+- Level transitions working (3 Normal levels).
+- Debug tools (DebugLogger + DebugHUD). Restart with R key, ESC → main menu.
+- **Classic mode**: line-clear logic scoped to target zone, `shiftInward` compacts cleared rows vertically and cleared columns horizontally (not both unless both were cleared simultaneously). Scoring (100/25/10 landing pts; 200×n + 50×(n-1) clear bonus). Next-piece preview queue. Mode-badge + LINES counter in UIScene. Speed progression.
+- **Soft drop**: fall-direction arrow key advances one step and resets the fall timer.
+- **Hard-drop lock delay** (`lock-delay` phase, 150 ms): piece teleports on Space but locks only after the delay, allowing last-moment nudges/rotations.
+- **Line-clear animation**: cleared cells flash white; surviving cells slide from their old positions to their new (compacted) positions via overlay tweens in JuiceManager.
+- **4-side spawn indicators**: colored edge bars highlight the active spawn side on each new piece.
+- **Classic shape pool**: Dot/Duo/Tri pieces excluded in Classic mode (standard 7-bag shapes only).
 
 ## Stage 6 — Future (Post-MVP)
 
