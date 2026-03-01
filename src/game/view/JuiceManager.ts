@@ -3,22 +3,22 @@
 // Subscribes to model events via EventBus. Keeps GameScene clean.
 // ---------------------------------------------------------------------------
 
-import Phaser from 'phaser';
-import { eventBus } from '../events/EventBus';
-import { GameEvents } from '../events/GameEvents';
-import { BoardView } from './BoardView';
+import type Phaser from 'phaser';
 import {
+    PARTICLE_COUNT,
+    PARTICLE_LIFESPAN,
+    PARTICLE_SPEED_MAX,
+    PARTICLE_SPEED_MIN,
     SHAKE_DURATION,
     SHAKE_INTENSITY,
     SHAKE_INTENSITY_BIG,
+    TWEEN_SETTLE_MS,
     TWEEN_SQUASH_MS,
     TWEEN_STRETCH_MS,
-    TWEEN_SETTLE_MS,
-    PARTICLE_LIFESPAN,
-    PARTICLE_SPEED_MIN,
-    PARTICLE_SPEED_MAX,
-    PARTICLE_COUNT,
 } from '../config/Constants';
+import { eventBus } from '../events/EventBus';
+import { GameEvents } from '../events/GameEvents';
+import type { BoardView } from './BoardView';
 
 export class JuiceManager {
     private scene: Phaser.Scene;
@@ -61,10 +61,7 @@ export class JuiceManager {
     // Effects
     // -----------------------------------------------------------------------
 
-    private onPieceLanded = (data: {
-        cells: { col: number; row: number }[];
-        color: string;
-    }) => {
+    private onPieceLanded = (data: { cells: { col: number; row: number }[]; color: string }) => {
         // Squash / stretch each landed cell
         for (let i = 0; i < data.cells.length; i++) {
             const { col, row } = data.cells[i];
@@ -97,21 +94,24 @@ export class JuiceManager {
         this.scene.cameras.main.flash(400, 255, 255, 255);
 
         // Camera zoom pulse
-        this.scene.cameras.main.zoomTo(1.3, 300, 'Sine.InOut', false, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-            if (progress === 1) {
-                this.scene.cameras.main.zoomTo(1, 200, 'Sine.InOut');
-            }
-        });
+        this.scene.cameras.main.zoomTo(
+            1.3,
+            300,
+            'Sine.InOut',
+            false,
+            (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+                if (progress === 1) {
+                    this.scene.cameras.main.zoomTo(1, 200, 'Sine.InOut');
+                }
+            },
+        );
     };
 
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
-    private emitParticles(
-        cells: { col: number; row: number }[],
-        color: string,
-    ): void {
+    private emitParticles(cells: { col: number; row: number }[], color: string): void {
         if (!this.particleTexture) return;
 
         // Average position of the landed cells

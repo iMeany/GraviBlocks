@@ -3,17 +3,11 @@
 // Reads model state and updates colored rectangles. Never mutates the model.
 // ---------------------------------------------------------------------------
 
-import Phaser from 'phaser';
-import { BoardModel } from '../model/BoardModel';
-import {
-    COLOR_CELL_CENTER,
-    COLOR_CELL_EMPTY,
-    COLOR_CELL_TARGET,
-    COLOR_GRID_LINE,
-} from '../config/Constants';
+import type Phaser from 'phaser';
+import { COLOR_CELL_CENTER, COLOR_CELL_EMPTY, COLOR_CELL_TARGET, COLOR_GRID_LINE } from '../config/Constants';
+import type { BoardModel } from '../model/BoardModel';
 
 export class BoardView {
-    private scene: Phaser.Scene;
     private container: Phaser.GameObjects.Container;
     private cellRects: Phaser.GameObjects.Rectangle[][] = [];
     private gridGraphics: Phaser.GameObjects.Graphics;
@@ -25,7 +19,6 @@ export class BoardView {
     readonly offsetY: number;
 
     constructor(scene: Phaser.Scene, board: BoardModel, cellSize: number) {
-        this.scene = scene;
         this.board = board;
         this.cellSize = cellSize;
 
@@ -40,14 +33,18 @@ export class BoardView {
         this.gridGraphics.lineStyle(1, COLOR_GRID_LINE, 0.3);
         for (let r = 0; r <= board.height; r++) {
             this.gridGraphics.lineBetween(
-                this.offsetX, this.offsetY + r * cellSize,
-                this.offsetX + board.width * cellSize, this.offsetY + r * cellSize,
+                this.offsetX,
+                this.offsetY + r * cellSize,
+                this.offsetX + board.width * cellSize,
+                this.offsetY + r * cellSize,
             );
         }
         for (let c = 0; c <= board.width; c++) {
             this.gridGraphics.lineBetween(
-                this.offsetX + c * cellSize, this.offsetY,
-                this.offsetX + c * cellSize, this.offsetY + board.height * cellSize,
+                this.offsetX + c * cellSize,
+                this.offsetY,
+                this.offsetX + c * cellSize,
+                this.offsetY + board.height * cellSize,
             );
         }
         this.container.add(this.gridGraphics);

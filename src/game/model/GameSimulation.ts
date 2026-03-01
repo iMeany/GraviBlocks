@@ -6,20 +6,14 @@
 // Communicates outward only through the EventBus.
 // ---------------------------------------------------------------------------
 
-import { BoardModel } from './BoardModel';
-import { PieceModel } from './PieceModel';
-import { PieceSpawner, type Direction, type FallVector } from './PieceSpawner';
 import type { LevelConfig } from '../config/LevelConfig';
 import { eventBus } from '../events/EventBus';
 import { GameEvents } from '../events/GameEvents';
+import { BoardModel } from './BoardModel';
+import type { PieceModel } from './PieceModel';
+import { type Direction, type FallVector, PieceSpawner } from './PieceSpawner';
 
-export type GamePhase =
-    | 'idle'
-    | 'spawning'
-    | 'falling'
-    | 'landing'
-    | 'won'
-    | 'game-over';
+export type GamePhase = 'idle' | 'spawning' | 'falling' | 'landing' | 'won' | 'game-over';
 
 export class GameSimulation {
     board!: BoardModel;
@@ -47,12 +41,7 @@ export class GameSimulation {
     /** Load a level and reset all state. */
     loadLevel(config: LevelConfig): void {
         this.levelConfig = config;
-        this.board = new BoardModel(
-            config.boardWidth,
-            config.boardHeight,
-            config.centerCells,
-            config.targetCells,
-        );
+        this.board = new BoardModel(config.boardWidth, config.boardHeight, config.centerCells, config.targetCells);
         this.spawner = new PieceSpawner(config.spawnMode);
         this.currentPiece = null;
         this.phase = 'idle';
@@ -138,11 +127,11 @@ export class GameSimulation {
 
         // Map absolute screen direction to grid delta
         let dCol = 0;
-        let dRow = 0;
+        const dRow = 0;
         if (direction === 'left') dCol = -1;
         else if (direction === 'right') dCol = 1;
 
-        // For vertical falls, left/right map to columns. 
+        // For vertical falls, left/right map to columns.
         // For horizontal falls (from left/right side), left/right map to rows.
         // But we're doing absolute controls for MVP, so left arrow = col-1, right arrow = col+1,
         // up arrow = row-1, down arrow = row+1.
@@ -172,10 +161,18 @@ export class GameSimulation {
         let dCol = 0;
         let dRow = 0;
         switch (dir) {
-            case 'up':    dRow = -1; break;
-            case 'down':  dRow =  1; break;
-            case 'left':  dCol = -1; break;
-            case 'right': dCol =  1; break;
+            case 'up':
+                dRow = -1;
+                break;
+            case 'down':
+                dRow = 1;
+                break;
+            case 'left':
+                dCol = -1;
+                break;
+            case 'right':
+                dCol = 1;
+                break;
         }
 
         // Only allow movement perpendicular to fall direction
@@ -224,11 +221,9 @@ export class GameSimulation {
     hardDrop(): void {
         if (this.phase !== 'falling' || !this.currentPiece) return;
 
-        while (this.canPlacePiece(
-            this.currentPiece,
-            this.pieceCol + this.fallDir.dx,
-            this.pieceRow + this.fallDir.dy,
-        )) {
+        while (
+            this.canPlacePiece(this.currentPiece, this.pieceCol + this.fallDir.dx, this.pieceRow + this.fallDir.dy)
+        ) {
             this.pieceCol += this.fallDir.dx;
             this.pieceRow += this.fallDir.dy;
         }
@@ -249,11 +244,7 @@ export class GameSimulation {
         let ghostCol = this.pieceCol;
         let ghostRow = this.pieceRow;
 
-        while (this.canPlacePiece(
-            this.currentPiece,
-            ghostCol + this.fallDir.dx,
-            ghostRow + this.fallDir.dy,
-        )) {
+        while (this.canPlacePiece(this.currentPiece, ghostCol + this.fallDir.dx, ghostRow + this.fallDir.dy)) {
             ghostCol += this.fallDir.dx;
             ghostRow += this.fallDir.dy;
         }

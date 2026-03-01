@@ -33,19 +33,24 @@ export class UIScene extends Phaser.Scene {
         });
 
         // Level name (top-right)
-        this.levelText = this.add.text(this.scale.width - pad, pad, this._levelName, {
-            fontSize: '14px',
-            fontFamily: 'monospace',
-            color: '#888899',
-        }).setOrigin(1, 0);
+        this.levelText = this.add
+            .text(this.scale.width - pad, pad, this._levelName, {
+                fontSize: '14px',
+                fontFamily: 'monospace',
+                color: '#888899',
+            })
+            .setOrigin(1, 0);
 
         // Pause indicator (center)
-        this.pauseText = this.add.text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
-            fontSize: '32px',
-            fontFamily: 'monospace',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5).setAlpha(0);
+        this.pauseText = this.add
+            .text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
+                fontSize: '32px',
+                fontFamily: 'monospace',
+                color: '#ffffff',
+                fontStyle: 'bold',
+            })
+            .setOrigin(0.5)
+            .setAlpha(0);
 
         // Listen for events
         eventBus.on(GameEvents.SCORE_CHANGED, this.onScoreChanged);

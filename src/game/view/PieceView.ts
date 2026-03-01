@@ -3,11 +3,10 @@
 // Creates Phaser Rectangles that follow the model piece position.
 // ---------------------------------------------------------------------------
 
-import Phaser from 'phaser';
-import { PieceModel } from '../model/PieceModel';
-import { BoardView } from './BoardView';
-import { COLOR_CELL_GHOST } from '../config/Constants';
-import { TWEEN_MOVE_MS } from '../config/Constants';
+import type Phaser from 'phaser';
+import { COLOR_CELL_GHOST, TWEEN_MOVE_MS } from '../config/Constants';
+import type { PieceModel } from '../model/PieceModel';
+import type { BoardView } from './BoardView';
 
 export class PieceView {
     private scene: Phaser.Scene;
@@ -32,11 +31,7 @@ export class PieceView {
 
         for (const offset of piece.offsets) {
             const pos = this.boardView.gridToPixel(col + offset.dx, row + offset.dy);
-            const rect = this.scene.add.rectangle(
-                pos.x, pos.y,
-                cellSize - 2, cellSize - 2,
-                color,
-            );
+            const rect = this.scene.add.rectangle(pos.x, pos.y, cellSize - 2, cellSize - 2, color);
             rect.setStrokeStyle(2, 0xffffff, 0.3);
             this.container.add(rect);
             this.blocks.push(rect);
@@ -84,9 +79,12 @@ export class PieceView {
         for (const offset of piece.offsets) {
             const pos = this.boardView.gridToPixel(col + offset.dx, row + offset.dy);
             const rect = this.scene.add.rectangle(
-                pos.x, pos.y,
-                cellSize - 2, cellSize - 2,
-                COLOR_CELL_GHOST, 0, // fillColor, fillAlpha
+                pos.x,
+                pos.y,
+                cellSize - 2,
+                cellSize - 2,
+                COLOR_CELL_GHOST,
+                0, // fillColor, fillAlpha
             );
             rect.setStrokeStyle(1, COLOR_CELL_GHOST, 0.25);
             rect.setAlpha(0.2);

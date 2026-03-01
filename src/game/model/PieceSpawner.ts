@@ -8,9 +8,9 @@
 //   ccw    — cycle top → left → bottom → right
 // ---------------------------------------------------------------------------
 
-import type { SpawnMode } from '../config/LevelConfig';
-import { PieceModel, SHAPE_NAMES, SHAPES } from './PieceModel';
 import { PIECE_COLORS } from '../config/Constants';
+import type { SpawnMode } from '../config/LevelConfig';
+import { PieceModel, SHAPE_NAMES } from './PieceModel';
 
 export type Direction = 'top' | 'bottom' | 'left' | 'right';
 
@@ -51,10 +51,14 @@ export class PieceSpawner {
     /** Unit vector pointing from the spawn edge toward the board center. */
     static fallDirection(side: Direction): FallVector {
         switch (side) {
-            case 'top':    return { dx:  0, dy:  1 };
-            case 'bottom': return { dx:  0, dy: -1 };
-            case 'left':   return { dx:  1, dy:  0 };
-            case 'right':  return { dx: -1, dy:  0 };
+            case 'top':
+                return { dx: 0, dy: 1 };
+            case 'bottom':
+                return { dx: 0, dy: -1 };
+            case 'left':
+                return { dx: 1, dy: 0 };
+            case 'right':
+                return { dx: -1, dy: 0 };
         }
     }
 
@@ -62,18 +66,18 @@ export class PieceSpawner {
      * Starting grid position for a piece spawning on the given side.
      * The piece is centered on the perpendicular axis.
      */
-    static spawnPosition(
-        side: Direction,
-        boardWidth: number,
-        boardHeight: number,
-    ): { col: number; row: number } {
+    static spawnPosition(side: Direction, boardWidth: number, boardHeight: number): { col: number; row: number } {
         const midCol = Math.floor(boardWidth / 2);
         const midRow = Math.floor(boardHeight / 2);
         switch (side) {
-            case 'top':    return { col: midCol, row: 0 };
-            case 'bottom': return { col: midCol, row: boardHeight - 1 };
-            case 'left':   return { col: 0,       row: midRow };
-            case 'right':  return { col: boardWidth - 1, row: midRow };
+            case 'top':
+                return { col: midCol, row: 0 };
+            case 'bottom':
+                return { col: midCol, row: boardHeight - 1 };
+            case 'left':
+                return { col: 0, row: midRow };
+            case 'right':
+                return { col: boardWidth - 1, row: midRow };
         }
     }
 
@@ -82,7 +86,7 @@ export class PieceSpawner {
         const name = SHAPE_NAMES[Math.floor(Math.random() * SHAPE_NAMES.length)];
         const colorHex = PIECE_COLORS[Math.floor(Math.random() * PIECE_COLORS.length)];
         // Convert numeric hex to CSS string for the model (view converts back)
-        const color = '#' + colorHex.toString(16).padStart(6, '0');
+        const color = `#${colorHex.toString(16).padStart(6, '0')}`;
         return new PieceModel(name, color);
     }
 
@@ -96,10 +100,14 @@ export class PieceSpawner {
      */
     static lateralAxes(side: Direction): { left: FallVector; right: FallVector } {
         switch (side) {
-            case 'top':    return { left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } };
-            case 'bottom': return { left: { dx: 1, dy: 0 },  right: { dx: -1, dy: 0 } };
-            case 'left':   return { left: { dx: 0, dy: -1 }, right: { dx: 0, dy: 1 } };
-            case 'right':  return { left: { dx: 0, dy: 1 },  right: { dx: 0, dy: -1 } };
+            case 'top':
+                return { left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } };
+            case 'bottom':
+                return { left: { dx: 1, dy: 0 }, right: { dx: -1, dy: 0 } };
+            case 'left':
+                return { left: { dx: 0, dy: -1 }, right: { dx: 0, dy: 1 } };
+            case 'right':
+                return { left: { dx: 0, dy: 1 }, right: { dx: 0, dy: -1 } };
         }
     }
 }

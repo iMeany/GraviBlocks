@@ -3,12 +3,12 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { BootScene } from './game/scenes/BootScene';
-import { PreloadScene } from './game/scenes/PreloadScene';
-import { MainMenuScene } from './game/scenes/MainMenuScene';
-import { GameScene } from './game/scenes/GameScene';
-import { UIScene } from './game/scenes/UIScene';
 import { COLOR_BACKGROUND } from './game/config/Constants';
+import { BootScene } from './game/scenes/BootScene';
+import { GameScene } from './game/scenes/GameScene';
+import { MainMenuScene } from './game/scenes/MainMenuScene';
+import { PreloadScene } from './game/scenes/PreloadScene';
+import { UIScene } from './game/scenes/UIScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,

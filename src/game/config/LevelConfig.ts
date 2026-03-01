@@ -26,12 +26,7 @@ export interface LevelConfig {
 // ---------------------------------------------------------------------------
 
 /** Helper: generate a filled rectangle of cells */
-function rect(
-    startCol: number,
-    startRow: number,
-    w: number,
-    h: number,
-): { col: number; row: number }[] {
+function rect(startCol: number, startRow: number, w: number, h: number): { col: number; row: number }[] {
     const cells: { col: number; row: number }[] = [];
     for (let r = startRow; r < startRow + h; r++) {
         for (let c = startCol; c < startCol + w; c++) {

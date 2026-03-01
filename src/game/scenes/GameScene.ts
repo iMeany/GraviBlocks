@@ -4,15 +4,15 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { GameSimulation } from '../model/GameSimulation';
-import { BoardView } from '../view/BoardView';
-import { PieceView } from '../view/PieceView';
-import { JuiceManager } from '../view/JuiceManager';
-import { InputManager, type GameAction } from '../input/InputManager';
+import { BASE_FALL_INTERVAL, BOARD_PADDING_RATIO } from '../config/Constants';
+import { LEVELS } from '../config/LevelConfig';
 import { eventBus } from '../events/EventBus';
 import { GameEvents } from '../events/GameEvents';
-import { LEVELS } from '../config/LevelConfig';
-import { BOARD_PADDING_RATIO, BASE_FALL_INTERVAL } from '../config/Constants';
+import { type GameAction, InputManager } from '../input/InputManager';
+import { GameSimulation } from '../model/GameSimulation';
+import { BoardView } from '../view/BoardView';
+import { JuiceManager } from '../view/JuiceManager';
+import { PieceView } from '../view/PieceView';
 
 export class GameScene extends Phaser.Scene {
     private sim!: GameSimulation;
@@ -203,18 +203,25 @@ export class GameScene extends Phaser.Scene {
         const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
         overlay.setDepth(100);
 
-        const label = this.add.text(width / 2, height * 0.4, text, {
-            fontSize: '42px',
-            fontFamily: 'monospace',
-            color,
-            fontStyle: 'bold',
-        }).setOrigin(0.5).setDepth(101);
+        const label = this.add
+            .text(width / 2, height * 0.4, text, {
+                fontSize: '42px',
+                fontFamily: 'monospace',
+                color,
+                fontStyle: 'bold',
+            })
+            .setOrigin(0.5)
+            .setDepth(101);
 
-        const btn = this.add.text(width / 2, height * 0.55, '[ CONTINUE ]', {
-            fontSize: '22px',
-            fontFamily: 'monospace',
-            color: '#ffffff',
-        }).setOrigin(0.5).setDepth(101).setInteractive({ useHandCursor: true });
+        const btn = this.add
+            .text(width / 2, height * 0.55, '[ CONTINUE ]', {
+                fontSize: '22px',
+                fontFamily: 'monospace',
+                color: '#ffffff',
+            })
+            .setOrigin(0.5)
+            .setDepth(101)
+            .setInteractive({ useHandCursor: true });
 
         btn.on('pointerover', () => btn.setColor(color));
         btn.on('pointerout', () => btn.setColor('#ffffff'));

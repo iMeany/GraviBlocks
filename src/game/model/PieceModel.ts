@@ -13,17 +13,59 @@ export interface Offset {
 
 /** Standard Tetromino shapes as relative offsets from pivot (0,0). */
 export const SHAPES: Record<string, Offset[]> = {
-    I: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }, { dx: 2, dy: 0 }],
-    O: [{ dx: 0, dy: 0 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 1, dy: 1 }],
-    T: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }],
-    S: [{ dx: 0, dy: 0 }, { dx: 1, dy: 0 }, { dx: -1, dy: 1 }, { dx: 0, dy: 1 }],
-    Z: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 0, dy: 1 }, { dx: 1, dy: 1 }],
-    L: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }, { dx: 1, dy: 1 }],
-    J: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }, { dx: -1, dy: 1 }],
+    I: [
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 2, dy: 0 },
+    ],
+    O: [
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 1, dy: 1 },
+    ],
+    T: [
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: 1 },
+    ],
+    S: [
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 1 },
+        { dx: 0, dy: 1 },
+    ],
+    Z: [
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 1, dy: 1 },
+    ],
+    L: [
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 1, dy: 1 },
+    ],
+    J: [
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 1 },
+    ],
     // Small shapes for early levels
     Dot: [{ dx: 0, dy: 0 }],
-    Duo: [{ dx: 0, dy: 0 }, { dx: 1, dy: 0 }],
-    Tri: [{ dx: -1, dy: 0 }, { dx: 0, dy: 0 }, { dx: 1, dy: 0 }],
+    Duo: [
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+    ],
+    Tri: [
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 0 },
+        { dx: 1, dy: 0 },
+    ],
 };
 
 export const SHAPE_NAMES = Object.keys(SHAPES);

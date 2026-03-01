@@ -4,9 +4,7 @@
 // import Phaser, yet it needs to emit events that views consume.
 // ---------------------------------------------------------------------------
 
-// We use Function here deliberately — event listeners have varied signatures
-// and the EventBus is a loose coupling mechanism, not a typed contract.
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+// biome-ignore lint/complexity/noBannedTypes: EventBus is a loose coupling mechanism — listeners have varied signatures.
 type Listener = Function;
 
 export class EventBus {
@@ -24,7 +22,9 @@ export class EventBus {
     }
 
     emit(event: string, ...args: unknown[]): void {
-        this.listeners.get(event)?.forEach((fn) => (fn as (...a: unknown[]) => void)(...args));
+        for (const fn of this.listeners.get(event) ?? []) {
+            (fn as (...a: unknown[]) => void)(...args);
+        }
     }
 
     removeAll(): void {
