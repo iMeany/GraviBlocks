@@ -16,7 +16,7 @@ A web-based grid-logic 2D puzzle game. Tetromino-like pieces spawn from **4 side
 
 **Why decouple?** The game has two very different update rates. Grid logic is discrete (step-based, on a timer); visuals are continuous (60 fps tweens, particles). Keeping the model as pure TypeScript also makes it unit-testable without Phaser.
 
-```text
+```
 Input → GameScene → GameSimulation (model) → emits events → Views react
 ```
 
@@ -39,13 +39,13 @@ Input → GameScene → GameSimulation (model) → emits events → Views react
 
 Build the entire game simulation with zero rendering. Everything should be testable by logging board state to console.
 
-| File | Responsibility |
-| ------ | --------------- |
-| `BoardModel` | 2D `Cell[][]` array. Knows about center cells, target cells, occupied cells. Win/loss checks. |
-| `PieceModel` | Tetromino shape as relative offsets. Rotation via matrix transform. |
-| `PieceSpawner` | Picks next spawn side (random / CW / CCW). Computes spawn position at board edge and fall direction vector. |
-| `GameSimulation` | Owns the above. Runs the game loop: spawn → fall → land → check win. Emits events. |
-| `LevelConfig` | Data type for level definitions. A few starter levels hardcoded. |
+| File             | Responsibility                                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| `BoardModel`     | 2D `Cell[][]` array. Knows about center cells, target cells, occupied cells. Win/loss checks.               |
+| `PieceModel`     | Tetromino shape as relative offsets. Rotation via matrix transform.                                         |
+| `PieceSpawner`   | Picks next spawn side (random / CW / CCW). Computes spawn position at board edge and fall direction vector. |
+| `GameSimulation` | Owns the above. Runs the game loop: spawn → fall → land → check win. Emits events.                          |
+| `LevelConfig`    | Data type for level definitions. A few starter levels hardcoded.                                            |
 
 **Key design choice — custom grid over Phaser Tilemap:** Tilemap is optimized for Tiled-editor map loading. Our game has unique 4-directional gravity and a center piece, which don't map to Tilemap assumptions. A plain `Cell[][]` is simpler and fully controlled.
 
